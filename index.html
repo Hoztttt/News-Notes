@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>News Notes</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --text: #1a1d21;
+    --muted: #6b7280;
+    --border: #e4e7eb;
+    --accent: #2f6fed;
+    --accent-soft: #eaf1ff;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115;
+      --card: #191c22;
+      --text: #e8eaed;
+      --muted: #9aa0a8;
+      --border: #2a2e36;
+      --accent: #5b8cff;
+      --accent-soft: #1b2436;
+      --shadow: 0 1px 3px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 24px 18px 80px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  h1 { font-size: 1.6rem; margin: 0; letter-spacing: -0.02em; }
+  h1 .emoji { font-size: 1.3rem; }
+  .tagline { color: var(--muted); font-size: .92rem; margin: 2px 0 22px; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 20px; background: var(--card); padding: 5px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .tab { flex: 1; text-align: center; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: .9rem; color: var(--muted); border: none; background: none; transition: all .15s; }
+  .tab.active { background: var(--accent-soft); color: var(--accent); }
+
+  .datebar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .datebar .today { font-weight: 700; font-size: 1.05rem; }
+  .datebar .sub { color: var(--muted); font-size: .85rem; }
+
+  .story {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 16px 14px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+  }
+  .story .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+    font-size: .78rem; font-weight: 700; margin-right: 8px;
+  }
+  .story label { display: flex; align-items: center; font-size: .8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 8px; }
+  .story input, .story textarea {
+    width: 100%; border: 1px solid var(--border); background: transparent; color: var(--text);
+    border-radius: 9px; padding: 10px 12px; font-size: .95rem; font-family: inherit; resize: vertical;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .story input:focus, .story textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .story input.headline { font-weight: 600; margin-bottom: 9px; }
+  .story textarea { min-height: 62px; }
+
+  .actions { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+  button.primary {
+    background: var(--accent); color: #fff; border: none; padding: 11px 22px;
+    border-radius: 10px; font-size: .95rem; font-weight: 600; cursor: pointer; transition: filter .15s;
+  }
+  button.primary:hover { filter: brightness(1.06); }
+  button.primary:disabled { opacity: .5; cursor: default; }
+  .savemsg { color: #16a34a; font-size: .88rem; font-weight: 600; opacity: 0; transition: opacity .2s; }
+  .savemsg.show { opacity: 1; }
+
+  /* History */
+  .day-group { margin-bottom: 26px; }
+  .day-head { font-weight: 700; font-size: 1rem; margin: 0 0 10px; display: flex; align-items: baseline; gap: 8px; }
+  .day-head .count { color: var(--muted); font-weight: 500; font-size: .82rem; }
+  .hcard { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .hcard .htitle { font-weight: 600; margin-bottom: 4px; display: flex; gap: 8px; }
+  .hcard .htitle .num { flex-shrink: 0; }
+  .hcard .hnote { color: var(--muted); font-size: .92rem; white-space: pre-wrap; }
+  .empty { text-align: center; color: var(--muted); padding: 50px 20px; }
+  .empty .big { font-size: 2.2rem; margin-bottom: 8px; }
+
+  .searchbar { margin-bottom: 18px; }
+  .searchbar input { width: 100%; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 10px; padding: 11px 14px; font-size: .95rem; box-shadow: var(--shadow); }
+  .searchbar input:focus { outline: none; border-color: var(--accent); }
+
+  .footer-note { text-align: center; color: var(--muted); font-size: .78rem; margin-top: 30px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="emoji">📰</span> News Notes</h1>
+  </header>
+  <p class="tagline">Jot down 3 stories you read today — writing them down helps you remember.</p>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-today" onclick="showTab('today')">Today</button>
+    <button class="tab" id="tab-history" onclick="showTab('history')">History</button>
+  </div>
+
+  <!-- TODAY -->
+  <section id="view-today">
+    <div class="datebar">
+      <div>
+        <div class="today" id="todayDate"></div>
+        <div class="sub" id="todayStatus"></div>
+      </div>
+    </div>
+
+    <div id="storyFields"></div>
+
+    <div class="actions">
+      <button class="primary" id="saveBtn" onclick="saveToday()">Save today's notes</button>
+      <span class="savemsg" id="saveMsg">Saved ✓</span>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="view-history" class="hidden">
+    <div class="searchbar">
+      <input type="text" id="searchBox" placeholder="Search your notes…" oninput="renderHistory()">
+    </div>
+    <div id="historyList"></div>
+  </section>
+
+  <p class="footer-note">Everything is saved privately on this device.</p>
+</div>
+
+<script>
+  const STORAGE_KEY = "newsNotes.v1";
+
+  // ---- data helpers ----
+  function loadAll() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    catch { return {}; }
+  }
+  function saveAll(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  }
+  function prettyDate(key) {
+    const [y,m,d] = key.split("-").map(Number);
+    const date = new Date(y, m-1, d);
+    return date.toLocaleDateString(undefined, { weekday:"long", month:"long", day:"numeric", year:"numeric" });
+  }
+
+  // ---- Today view ----
+  function buildStoryFields() {
+    const container = document.getElementById("storyFields");
+    const data = loadAll();
+    const entry = data[todayKey()] || { stories: [] };
+    let html = "";
+    for (let i = 0; i < 3; i++) {
+      const s = entry.stories[i] || { headline: "", note: "" };
+      html += `
+        <div class="story">
+          <label><span class="num">${i+1}</span> News story</label>
+          <input class="headline" id="headline-${i}" placeholder="What was the story? (a headline is fine)" value="${escapeAttr(s.headline)}">
+          <textarea id="note-${i}" placeholder="Why it matters / what you want to remember about it…">${escapeHtml(s.note)}</textarea>
+        </div>`;
+    }
+    container.innerHTML = html;
+  }
+
+  function saveToday() {
+    const data = loadAll();
+    const stories = [];
+    for (let i = 0; i < 3; i++) {
+      const headline = document.getElementById("headline-"+i).value.trim();
+      const note = document.getElementById("note-"+i).value.trim();
+      if (headline || note) stories.push({ headline, note });
+    }
+    const key = todayKey();
+    if (stories.length === 0) {
+      delete data[key];
+    } else {
+      data[key] = { stories, savedAt: new Date().toISOString() };
+    }
+    saveAll(data);
+    updateTodayStatus();
+    const msg = document.getElementById("saveMsg");
+    msg.classList.add("show");
+    setTimeout(() => msg.classList.remove("show"), 1600);
+  }
+
+  function updateTodayStatus() {
+    const data = loadAll();
+    const entry = data[todayKey()];
+    const status = document.getElementById("todayStatus");
+    if (entry && entry.stories.length) {
+      status.textContent = entry.stories.length + " " + (entry.stories.length === 1 ? "story" : "stories") + " saved for today";
+    } else {
+      status.textContent = "No notes yet — start jotting!";
+    }
+  }
+
+  // ---- History view ----
+  function renderHistory() {
+    const data = loadAll();
+    const q = document.getElementById("searchBox").value.trim().toLowerCase();
+    const keys = Object.keys(data).sort().reverse();
+    const list = document.getElementById("historyList");
+
+    let html = "";
+    let shown = 0;
+    for (const key of keys) {
+      const stories = (data[key].stories || []).filter(s => {
+        if (!q) return true;
+        return (s.headline + " " + s.note).toLowerCase().includes(q);
+      });
+      if (!stories.length) continue;
+      shown++;
+      html += `<div class="day-group">
+        <div class="day-head">${prettyDate(key)} <span class="count">${stories.length} ${stories.length===1?"story":"stories"}</span></div>`;
+      stories.forEach((s, i) => {
+        html += `<div class="hcard">
+          <div class="htitle"><span class="num">${i+1}</span><span>${escapeHtml(s.headline) || '<em style="color:var(--muted)">(untitled)</em>'}</span></div>
+          ${s.note ? `<div class="hnote">${escapeHtml(s.note)}</div>` : ""}
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    if (!shown) {
+      html = `<div class="empty"><div class="big">🗒️</div>${q ? "No notes match your search." : "No saved notes yet.<br>Head to the Today tab to add your first three stories."}</div>`;
+    }
+    list.innerHTML = html;
+  }
+
+  // ---- tabs ----
+  function showTab(name) {
+    document.getElementById("view-today").classList.toggle("hidden", name !== "today");
+    document.getElementById("view-history").classList.toggle("hidden", name !== "history");
+    document.getElementById("tab-today").classList.toggle("active", name === "today");
+    document.getElementById("tab-history").classList.toggle("active", name === "history");
+    if (name === "history") renderHistory();
+  }
+
+  // ---- escaping ----
+  function escapeHtml(str="") { return str.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+  function escapeAttr(str="") { return str.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+  // ---- init ----
+  document.getElementById("todayDate").textContent = prettyDate(todayKey());
+  buildStoryFields();
+  updateTodayStatus();
+</script>
+</body>
+</html>
