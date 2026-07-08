@@ -3,6 +3,9 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "notes.json"   # note saves shouldn't trigger a site redeploy
+      - "README.md"
   workflow_dispatch:
 
 # Allow the workflow to enable Pages and publish to it

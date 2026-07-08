@@ -15,6 +15,8 @@
     --accent-soft: #eaf1ff;
     --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
     --radius: 14px;
+    --ok: #16a34a;
+    --warn: #b45309;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -26,6 +28,8 @@
       --accent: #5b8cff;
       --accent-soft: #1b2436;
       --shadow: 0 1px 3px rgba(0,0,0,.4);
+      --ok: #4ade80;
+      --warn: #fbbf24;
     }
   }
   * { box-sizing: border-box; }
@@ -38,10 +42,26 @@
     -webkit-font-smoothing: antialiased;
   }
   .wrap { max-width: 680px; margin: 0 auto; padding: 24px 18px 80px; }
-  header { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
   h1 { font-size: 1.6rem; margin: 0; letter-spacing: -0.02em; }
   h1 .emoji { font-size: 1.3rem; }
-  .tagline { color: var(--muted); font-size: .92rem; margin: 2px 0 22px; }
+  .tagline { color: var(--muted); font-size: .92rem; margin: 2px 0 18px; }
+
+  /* Sync status pill */
+  .sync {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow);
+    border-radius: 999px; padding: 6px 12px; font-size: .82rem; font-weight: 600; color: var(--muted);
+    transition: filter .15s; white-space: nowrap;
+  }
+  .sync:hover { filter: brightness(1.03); }
+  .sync .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .sync.connected { color: var(--ok); }
+  .sync.connected .dot { background: var(--ok); }
+  .sync.busy .dot { background: var(--accent); animation: pulse 1s infinite; }
+  .sync.error { color: var(--warn); }
+  .sync.error .dot { background: var(--warn); }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
 
   .tabs { display: flex; gap: 6px; margin-bottom: 20px; background: var(--card); padding: 5px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); }
   .tab { flex: 1; text-align: center; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: .9rem; color: var(--muted); border: none; background: none; transition: all .15s; }
@@ -82,7 +102,7 @@
   }
   button.primary:hover { filter: brightness(1.06); }
   button.primary:disabled { opacity: .5; cursor: default; }
-  .savemsg { color: #16a34a; font-size: .88rem; font-weight: 600; opacity: 0; transition: opacity .2s; }
+  .savemsg { color: var(--ok); font-size: .88rem; font-weight: 600; opacity: 0; transition: opacity .2s; }
   .savemsg.show { opacity: 1; }
 
   /* History */
@@ -102,12 +122,35 @@
 
   .footer-note { text-align: center; color: var(--muted); font-size: .78rem; margin-top: 30px; }
   .hidden { display: none; }
+
+  /* Modal */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 18px; z-index: 50; }
+  .overlay.hidden { display: none; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; max-width: 460px; width: 100%; padding: 22px; box-shadow: 0 12px 40px rgba(0,0,0,.3); max-height: 90vh; overflow-y: auto; }
+  .modal h2 { margin: 0 0 6px; font-size: 1.2rem; }
+  .modal p { color: var(--muted); font-size: .9rem; margin: 0 0 14px; }
+  .modal ol { color: var(--muted); font-size: .88rem; margin: 0 0 14px; padding-left: 20px; }
+  .modal ol li { margin-bottom: 6px; }
+  .modal ol a { color: var(--accent); }
+  .modal label { display: block; font-size: .8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 6px; }
+  .modal input[type=password], .modal input[type=text] { width: 100%; border: 1px solid var(--border); background: transparent; color: var(--text); border-radius: 9px; padding: 10px 12px; font-size: .95rem; font-family: ui-monospace, Menlo, monospace; }
+  .modal input:focus { outline: none; border-color: var(--accent); }
+  .modal .mrow { display: flex; gap: 10px; margin-top: 16px; align-items: center; flex-wrap: wrap; }
+  .modal button.primary { padding: 10px 18px; }
+  .modal button.ghost { background: none; border: 1px solid var(--border); color: var(--muted); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: .9rem; cursor: pointer; }
+  .modal button.link { background: none; border: none; color: var(--warn); font-weight: 600; font-size: .85rem; cursor: pointer; padding: 0; }
+  .modal .status { font-size: .85rem; font-weight: 600; margin-top: 10px; }
+  .modal .status.ok { color: var(--ok); }
+  .modal .status.err { color: var(--warn); }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <h1><span class="emoji">📰</span> News Notes</h1>
+    <div class="sync" id="syncPill" onclick="openSettings()">
+      <span class="dot"></span><span id="syncLabel">On this device only</span>
+    </div>
   </header>
   <p class="tagline">Jot down 3 stories you read today — writing them down helps you remember.</p>
 
@@ -141,20 +184,48 @@
     <div id="historyList"></div>
   </section>
 
-  <p class="footer-note">Everything is saved privately on this device.</p>
+  <p class="footer-note" id="footerNote">Saved on this device. Tap the badge up top to also back up to GitHub.</p>
+</div>
+
+<!-- Settings modal -->
+<div class="overlay hidden" id="overlay">
+  <div class="modal">
+    <h2>Back up to GitHub</h2>
+    <p>Save your notes into the repo (<code>notes.json</code>) so they survive a cache clear and follow you across devices. Paste a GitHub token with permission to write to this one repo — it's stored only on this device.</p>
+    <ol>
+      <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → new fine-grained token</a></li>
+      <li>Under <b>Repository access</b> → <b>Only select repositories</b> → choose <b>News-Notes</b></li>
+      <li>Under <b>Permissions → Repository → Contents</b>, set <b>Read and write</b></li>
+      <li>Click <b>Generate token</b>, copy it, and paste below</li>
+    </ol>
+    <label for="tokenInput">GitHub token</label>
+    <input type="password" id="tokenInput" placeholder="github_pat_… or ghp_…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="status" id="modalStatus"></div>
+    <div class="mrow">
+      <button class="primary" id="connectBtn" onclick="connectToken()">Connect &amp; sync</button>
+      <button class="ghost" onclick="closeSettings()">Cancel</button>
+      <button class="link hidden" id="disconnectBtn" onclick="disconnectToken()">Disconnect</button>
+    </div>
+  </div>
 </div>
 
 <script>
-  const STORAGE_KEY = "newsNotes.v1";
+  // ---- config ----
+  const GH = { owner: "Hoztttt", repo: "News-Notes", branch: "main", path: "notes.json" };
+  const LS_DATA  = "newsNotes.v1";
+  const LS_TOKEN = "newsNotes.ghToken";
+  const LS_SHA   = "newsNotes.sha";
 
-  // ---- data helpers ----
+  let remoteSha = localStorage.getItem(LS_SHA) || null;
+
+  // ---- local data helpers ----
   function loadAll() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    try { return JSON.parse(localStorage.getItem(LS_DATA)) || {}; }
     catch { return {}; }
   }
-  function saveAll(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }
+  function saveAll(data) { localStorage.setItem(LS_DATA, JSON.stringify(data)); }
+  function getToken() { return localStorage.getItem(LS_TOKEN) || ""; }
+
   function todayKey() {
     const d = new Date();
     return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
@@ -165,11 +236,69 @@
     return date.toLocaleDateString(undefined, { weekday:"long", month:"long", day:"numeric", year:"numeric" });
   }
 
+  // ---- base64 (unicode-safe) ----
+  function b64Encode(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p) => String.fromCharCode("0x" + p)));
+  }
+  function b64Decode(str) {
+    return decodeURIComponent(Array.prototype.map.call(atob(str.replace(/\s/g, "")),
+      c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join(""));
+  }
+
+  // ---- GitHub sync ----
+  function apiUrl() {
+    return `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`;
+  }
+  function ghHeaders(token) {
+    return { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json" };
+  }
+
+  // Pull notes.json from the repo. Returns {data, sha} or null if the file doesn't exist.
+  async function ghPull(token) {
+    const res = await fetch(apiUrl() + "?ref=" + GH.branch + "&t=" + Date.now(), { headers: ghHeaders(token), cache: "no-store" });
+    if (res.status === 404) return { data: null, sha: null };
+    if (!res.ok) throw new Error("GitHub read failed (" + res.status + ")");
+    const json = await res.json();
+    const data = JSON.parse(b64Decode(json.content));
+    return { data, sha: json.sha };
+  }
+
+  // Commit the given data object to notes.json.
+  async function ghPush(token, data, attempt = 0) {
+    const body = {
+      message: "Update news notes",
+      content: b64Encode(JSON.stringify(data, null, 2)),
+      branch: GH.branch,
+    };
+    if (remoteSha) body.sha = remoteSha;
+    const res = await fetch(apiUrl(), { method: "PUT", headers: ghHeaders(token), body: JSON.stringify(body) });
+    if (res.status === 409 && attempt === 0) {
+      // Stale sha (edited elsewhere) — refresh sha and retry once, keeping this device's version.
+      const cur = await ghPull(token);
+      remoteSha = cur.sha;
+      return ghPush(token, data, 1);
+    }
+    if (!res.ok) throw new Error("GitHub save failed (" + res.status + ")");
+    const json = await res.json();
+    remoteSha = json.content.sha;
+    localStorage.setItem(LS_SHA, remoteSha);
+  }
+
+  // ---- sync status pill ----
+  function setSync(state, label) {
+    const pill = document.getElementById("syncPill");
+    pill.className = "sync" + (state ? " " + state : "");
+    document.getElementById("syncLabel").textContent = label;
+  }
+  function refreshSyncIdle() {
+    if (getToken()) { setSync("connected", "Backed up to GitHub"); document.getElementById("footerNote").textContent = "Backed up to GitHub — safe across cache clears and devices."; }
+    else { setSync("", "On this device only"); document.getElementById("footerNote").textContent = "Saved on this device. Tap the badge up top to also back up to GitHub."; }
+  }
+
   // ---- Today view ----
   function buildStoryFields() {
     const container = document.getElementById("storyFields");
-    const data = loadAll();
-    const entry = data[todayKey()] || { stories: [] };
+    const entry = loadAll()[todayKey()] || { stories: [] };
     let html = "";
     for (let i = 0; i < 3; i++) {
       const s = entry.stories[i] || { headline: "", note: "" };
@@ -183,7 +312,7 @@
     container.innerHTML = html;
   }
 
-  function saveToday() {
+  async function saveToday() {
     const data = loadAll();
     const stories = [];
     for (let i = 0; i < 3; i++) {
@@ -192,21 +321,29 @@
       if (headline || note) stories.push({ headline, note });
     }
     const key = todayKey();
-    if (stories.length === 0) {
-      delete data[key];
-    } else {
-      data[key] = { stories, savedAt: new Date().toISOString() };
-    }
+    if (stories.length === 0) delete data[key];
+    else data[key] = { stories, savedAt: new Date().toISOString() };
     saveAll(data);
     updateTodayStatus();
+
     const msg = document.getElementById("saveMsg");
-    msg.classList.add("show");
-    setTimeout(() => msg.classList.remove("show"), 1600);
+    msg.textContent = "Saved ✓"; msg.classList.add("show");
+
+    const token = getToken();
+    if (token) {
+      setSync("busy", "Backing up…");
+      try {
+        await ghPush(token, data);
+        refreshSyncIdle();
+      } catch (e) {
+        setSync("error", "Backup failed — saved locally");
+      }
+    }
+    setTimeout(() => msg.classList.remove("show"), 1800);
   }
 
   function updateTodayStatus() {
-    const data = loadAll();
-    const entry = data[todayKey()];
+    const entry = loadAll()[todayKey()];
     const status = document.getElementById("todayStatus");
     if (entry && entry.stories.length) {
       status.textContent = entry.stories.length + " " + (entry.stories.length === 1 ? "story" : "stories") + " saved for today";
@@ -221,18 +358,13 @@
     const q = document.getElementById("searchBox").value.trim().toLowerCase();
     const keys = Object.keys(data).sort().reverse();
     const list = document.getElementById("historyList");
-
-    let html = "";
-    let shown = 0;
+    let html = "", shown = 0;
     for (const key of keys) {
-      const stories = (data[key].stories || []).filter(s => {
-        if (!q) return true;
-        return (s.headline + " " + s.note).toLowerCase().includes(q);
-      });
+      const stories = (data[key].stories || []).filter(s =>
+        !q || (s.headline + " " + s.note).toLowerCase().includes(q));
       if (!stories.length) continue;
       shown++;
-      html += `<div class="day-group">
-        <div class="day-head">${prettyDate(key)} <span class="count">${stories.length} ${stories.length===1?"story":"stories"}</span></div>`;
+      html += `<div class="day-group"><div class="day-head">${prettyDate(key)} <span class="count">${stories.length} ${stories.length===1?"story":"stories"}</span></div>`;
       stories.forEach((s, i) => {
         html += `<div class="hcard">
           <div class="htitle"><span class="num">${i+1}</span><span>${escapeHtml(s.headline) || '<em style="color:var(--muted)">(untitled)</em>'}</span></div>
@@ -241,10 +373,7 @@
       });
       html += `</div>`;
     }
-
-    if (!shown) {
-      html = `<div class="empty"><div class="big">🗒️</div>${q ? "No notes match your search." : "No saved notes yet.<br>Head to the Today tab to add your first three stories."}</div>`;
-    }
+    if (!shown) html = `<div class="empty"><div class="big">🗒️</div>${q ? "No notes match your search." : "No saved notes yet.<br>Head to the Today tab to add your first three stories."}</div>`;
     list.innerHTML = html;
   }
 
@@ -257,14 +386,78 @@
     if (name === "history") renderHistory();
   }
 
+  // ---- settings modal ----
+  function openSettings() {
+    document.getElementById("overlay").classList.remove("hidden");
+    document.getElementById("tokenInput").value = getToken();
+    document.getElementById("modalStatus").textContent = "";
+    document.getElementById("disconnectBtn").classList.toggle("hidden", !getToken());
+  }
+  function closeSettings() { document.getElementById("overlay").classList.add("hidden"); }
+
+  async function connectToken() {
+    const token = document.getElementById("tokenInput").value.trim();
+    const statusEl = document.getElementById("modalStatus");
+    const btn = document.getElementById("connectBtn");
+    if (!token) { statusEl.className = "status err"; statusEl.textContent = "Please paste a token first."; return; }
+    btn.disabled = true; statusEl.className = "status"; statusEl.textContent = "Connecting…";
+    try {
+      const remote = await ghPull(token);           // validates the token + reads existing notes
+      localStorage.setItem(LS_TOKEN, token);
+      // Merge: keep every day from both local and remote (remote wins on same day).
+      const merged = Object.assign({}, loadAll(), remote.data || {});
+      saveAll(merged);
+      remoteSha = remote.sha;
+      if (remoteSha) localStorage.setItem(LS_SHA, remoteSha); else localStorage.removeItem(LS_SHA);
+      await ghPush(token, merged);                   // write the merged set back up
+      statusEl.className = "status ok"; statusEl.textContent = "Connected! Your notes are backed up.";
+      buildStoryFields(); updateTodayStatus(); refreshSyncIdle();
+      setTimeout(closeSettings, 900);
+    } catch (e) {
+      statusEl.className = "status err";
+      statusEl.textContent = "Couldn't connect. Double-check the token has Contents: Read and write on News-Notes.";
+    } finally { btn.disabled = false; }
+  }
+
+  function disconnectToken() {
+    localStorage.removeItem(LS_TOKEN);
+    localStorage.removeItem(LS_SHA);
+    remoteSha = null;
+    refreshSyncIdle();
+    closeSettings();
+  }
+
   // ---- escaping ----
   function escapeHtml(str="") { return str.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
   function escapeAttr(str="") { return str.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
   // ---- init ----
-  document.getElementById("todayDate").textContent = prettyDate(todayKey());
-  buildStoryFields();
-  updateTodayStatus();
+  async function init() {
+    document.getElementById("todayDate").textContent = prettyDate(todayKey());
+    buildStoryFields();
+    updateTodayStatus();
+    refreshSyncIdle();
+
+    // If connected, pull the latest from GitHub so a fresh device / cleared cache repopulates.
+    const token = getToken();
+    if (token) {
+      setSync("busy", "Syncing…");
+      try {
+        const remote = await ghPull(token);
+        if (remote.data) {
+          const merged = Object.assign({}, loadAll(), remote.data);
+          saveAll(merged);
+          remoteSha = remote.sha;
+          if (remoteSha) localStorage.setItem(LS_SHA, remoteSha);
+          buildStoryFields(); updateTodayStatus();
+        }
+        refreshSyncIdle();
+      } catch (e) {
+        setSync("error", "Offline — using this device");
+      }
+    }
+  }
+  init();
 </script>
 </body>
 </html>
